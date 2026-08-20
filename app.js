@@ -72,7 +72,7 @@ window.onload = async function () {
                         tipo: 'warning',
                         titulo: 'PROPIEDAD INTELECTUAL',
                         mensaje: '© 2026 Diaz´s Tech - Todos los derechos reservados.',
-                        detalle: 'Queda estrictamente prohibida la venta, distribución, copia, o mal uso de este software sin autorización expresa del autor.',
+                        detalle: 'Queda estrictamente prohibida la venta, distribución, copia, o mal uso de este software sin autorización expresa del autor.<br><br><small style="color: #888; font-size: 0.85em;">Diseño y co-creación: MIGUEL ANGEL QUIROZ COTA</small>',
                     });
                 }, 400);
             } catch (e) {
@@ -98,7 +98,7 @@ window.onload = async function () {
                         tipo: 'warning',
                         titulo: 'PROPIEDAD INTELECTUAL',
                         mensaje: '© 2026 Diaz´s Tech - Todos los derechos reservados.',
-                        detalle: 'Queda estrictamente prohibida la venta, distribución, copia, o mal uso de este software sin autorización expresa del autor.',
+                        detalle: 'Queda estrictamente prohibida la venta, distribución, copia, o mal uso de este software sin autorización expresa del autor.<br><br><small style="color: #888; font-size: 0.85em;">Diseño y co-creación: MIGUEL ANGEL QUIROZ COTA</small>',
                     });
                 }, 400);
             } else {
