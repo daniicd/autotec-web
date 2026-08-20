@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <title>AUTOTEC Inventory</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div id="pantalla-carga">Sincronizando base de datos del taller...</div>
+
+    <div id="modal-moderno" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header"><h3 id="modal-titulo">Título</h3><button class="modal-close" onclick="cerrarModal()">×</button></div>
+            <div class="modal-body">
+                <div id="modal-icono" class="modal-icon-circulo">✓</div>
+                <h2 id="modal-mensaje">Mensaje Principal</h2><div id="modal-detalle" style="margin-bottom: 10px;"></div>
+                <input type="text" id="modal-input" class="modal-input-field" style="display:none;" autocomplete="off">
+            </div>
+            <div class="modal-footer">
+                <button id="modal-btn-cancelar" class="modal-btn modal-btn-secundario" onclick="cerrarModal()">Cancelar</button>
+                <button id="modal-btn-terciario" class="modal-btn" style="display:none;">Guardar</button>
+                <button id="modal-btn-aceptar" class="modal-btn modal-btn-primario">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="navbar glass-navbar">
+        <div class="nav-brand">
+            <img src="AUTOTEC-LOGO.png" alt="Logo" class="nav-logo">
+            <span class="nav-title">AUTOTEC INVENTORY</span>
+        </div>
+        
+        <div class="nav-menu">
+            <button id="nav-ventas" class="nav-item activo" onclick="cambiarVista('seccion-ventas', this)">🛒 Punto de Venta</button>
+            <button id="nav-produccion" class="nav-item btn-prod" onclick="cambiarVista('seccion-produccion', this)">🛠️ Órdenes de Servicio</button>
+            <button id="nav-inventario" class="nav-item" onclick="cambiarVista('seccion-inventario', this)">📦 Inventario</button>
+            <button id="nav-clientes" class="nav-item" onclick="cambiarVista('seccion-clientes', this)">👥 Clientes</button>
+            <button id="nav-vehiculos" class="nav-item" onclick="cambiarVista('seccion-vehiculos', this)">🚘 Vehículos</button>
+            <button id="nav-proveedores" class="nav-item" onclick="cambiarVista('seccion-proveedores', this)">🚚 Proveedores</button>
+
+        </div>
+
+        <div class="nav-actions">
+            <button type="button" class="btn-action refresh-btn" onclick="window.location.reload()" title="Descargar datos recientes de la nube">🔄 Refrescar</button>
+            <button id="btn-login" class="btn-action login-btn" onclick="solicitarAdmin()">👤 Modo: Empleado</button>
+        </div>
+    </div>
+
+    <div class="contenedor">
+        <!-- 1. PUNTO DE VENTA -->
+        <div id="seccion-ventas" class="seccion activa">
+            <h2>Punto de Venta</h2>
+            <div style="background-color: #fcfcfc; padding: 15px; border-radius: 6px; border: 1px solid var(--border);">
+                <h3>Encabezado del Documento</h3>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;"><label>Cliente / Proveedor:</label><select id="v-cliente"><option value="">Seleccione a quién le vende...</option></select></div>
+                    <div class="form-group"><label>Su pedido:</label><input type="text" id="v-pedido"></div><div class="form-group"><label>Vendedor:</label><input type="text" id="v-vendedor" value="ADMINISTRADOR"></div>
+                </div>
+                <div class="form-row"><div class="form-group"><label>Moneda:</label><select id="v-moneda"><option value="Pesos">Pesos (MXN)</option><option value="Dolares">Dólares (USD)</option></select></div><div class="form-group"><label>Tipo de cambio:</label><input type="number" id="v-tc" step="0.000001" value="1.000000"></div></div>
+            </div>
+            <h3>Captura por Partida</h3>
+            <div class="form-row">
+                <div class="form-group" style="flex: 0.6;"><label>Cant:</label><input type="number" id="p-cant" value="1" min="0.001" step="any"></div><div class="form-group" style="flex: 0.8;"><label>Línea:</label><input type="text" id="p-linea" readonly style="background:#eee;"></div>
+                <div class="form-group" style="flex: 2.5;"><label>Buscar Producto:</label><input type="text" id="p-buscar-input" autocomplete="off" oninput="filtrarSugerenciasVenta(this.value)"><input type="hidden" id="p-producto"><div id="p-sugerencias" class="sugerencias-box"></div></div>
+                <div class="form-group" style="flex: 1;"><label>Precio Unit. ($):</label><input type="number" id="p-precio" step="0.01"></div>
+            </div>
+            <div class="form-row" style="align-items: flex-end;">
+                <div class="form-group"><label>Desc 1 (%):</label><input type="number" id="p-desc1" step="0.01" value="0.00"></div><div class="form-group"><label>Desc 2 (%):</label><input type="number" id="p-desc2" step="0.01" value="0.00"></div><div class="form-group"><label>Desc 3 (%):</label><input type="number" id="p-desc3" step="0.01" value="0.00"></div><div class="form-group"><label>Impuesto (%):</label><input type="number" id="p-impuesto" step="0.01" value="16.00"></div><div class="form-group"><label>Comisión:</label><input type="number" id="p-comision" step="0.01" value="0.00"></div>
+                <div class="form-group"><button type="button" class="btn-secundario" onclick="agregarPartida()">+ Partida</button><button type="button" class="btn-secundario btn-limpiar" onclick="limpiarPartida()">Limpiar</button></div>
+            </div>
+            <div class="tabla-container"><table><thead><tr><th>Cant.</th><th>Línea</th><th>Producto</th><th>Desc1</th><th>Desc2</th><th>Desc3</th><th>Impuesto</th><th>Comis.</th><th>Precio Unit.</th><th>Total</th><th>Acción</th></tr></thead><tbody id="tabla-cuerpo-venta"></tbody></table></div>
+            <div class="resumen-caja"><p>Subtotal: $<span id="lbl-subtotal">0.00</span></p><p>I.V.A.: $<span id="lbl-iva">0.00</span></p><h3>Total a Pagar: $<span id="lbl-total">0.00</span></h3><button class="btn-principal" onclick="procesarVenta()" id="btn-procesar">Procesar Venta</button></div>
+        </div>
+
+        <!-- 2. ÓRDENES DE SERVICIO Y REFACCIONES AUTOTEC (Antes Producción) -->
+        <div id="seccion-produccion" class="seccion">
+            <h2 style="color:var(--prod);">🛠️ Órdenes de Servicio y Refacciones por Vehículo</h2>
+            <p style="color:#555; margin-bottom:15px;">Control técnico de refacciones aplicadas, servicios de mantenimiento, mano de obra y registro de garantías.</p>
+            
+            <div style="background-color: #fcfcfc; padding: 18px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <h3 style="color:var(--prod); margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">1. Datos del Vehículo y Garantía</h3>
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="form-group" style="flex: 3;">
+                        <label style="font-weight: bold; font-size: 13px;">Seleccionar Vehículo / Cliente:</label>
+                        <input type="text" id="serv-vehiculo-input" autocomplete="off" oninput="filtrarSugerenciasVehiculo(this.value)" placeholder="Escribe Dueño, Marca, Placas o N° Orden..." style="font-size: 14px; padding: 10px; border: 1px solid var(--prod); border-radius: 5px;">
+                        <input type="hidden" id="serv-vehiculo-hidden">
+                        <div id="vehiculos-sugerencias" class="sugerencias-box"></div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label style="font-weight: bold; font-size: 13px;">Fecha de Servicio / Modificación:</label>
+                        <input type="date" id="input-fecha-produccion" class="form-control" style="font-size: 14px; padding: 9px; font-weight: bold;">
+                    </div>
+                    <div class="form-group" style="flex: 0.8;">
+                        <label style="font-weight: bold; font-size: 13px; color: #d35400;">N° Orden (Opcional):</label>
+                        <input type="text" id="serv-folio" class="form-control" placeholder="Automático" style="font-size: 14px; padding: 9px; font-weight: bold; border-color: #d35400;" title="Deja este campo vacío para auto-asignar el número consecutivo, o escribe manualmente el número de la orden física (ej: 26-357)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1.5;">
+                        <label style="color:#555;">Propietario:</label>
+                        <input type="text" id="serv-dueno" readonly style="background:#f4f6f6; font-weight:bold; color:#2980b9;">
+                    </div>
+                    <div class="form-group" style="flex: 1.5;">
+                        <label style="color:#555;">Modelo y Año:</label>
+                        <input type="text" id="serv-modelo" readonly style="background:#f4f6f6; font-weight:bold;">
+                    </div>
+                    <div class="form-group" style="flex: 1.5;">
+                        <label style="color:#555;">VIN / Número de Serie:</label>
+                        <input type="text" id="serv-vin" readonly style="background:#f4f6f6; font-family:monospace; font-weight:bold; color:#d35400;">
+                    </div>
+                    <div class="form-group" style="flex: 1.2;">
+                        <label style="color:#555;">Kilometraje Actual:</label>
+                        <input type="text" id="serv-km" placeholder="Ej: 152,400 km">
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom:0;">
+                    <div class="form-group" style="width:100%;">
+                        <label style="color:#2c3e50; font-weight:bold;">Trabajo a Realizar / Síntoma Reportado por el Cliente:</label>
+                        <input type="text" id="serv-sintoma" placeholder="Ej: Afinación mayor, reemplazo de filtro de aire, rectificado de discos delant., cambio de aceite sintético 5W-30">
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top: 10px; margin-bottom:0;">
+                    <div class="form-group" style="flex: 1;"><label style="color:#555; font-size:12px; font-weight:bold;">Bujías:</label><input type="text" id="serv-bujias" placeholder="Ej: IRIDIUM"></div>
+                    <div class="form-group" style="flex: 1;"><label style="color:#555; font-size:12px; font-weight:bold;">Filtro Gasolina:</label><input type="text" id="serv-fgasolina" placeholder="Ej: GG-64"></div>
+                    <div class="form-group" style="flex: 1;"><label style="color:#555; font-size:12px; font-weight:bold;">Filtro Aire:</label><input type="text" id="serv-faire" placeholder="Ej: 1681354880"></div>
+                    <div class="form-group" style="flex: 1;"><label style="color:#555; font-size:12px; font-weight:bold;">Filtro Aceite:</label><input type="text" id="serv-faceite" placeholder="Ej: 1680086980"></div>
+                </div>
+            </div>
+
+            <div style="background-color: #fcfcfc; padding: 18px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <h3 style="color:var(--prod); margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">2. Refacciones y Servicios Utilizados</h3>
+                <div class="form-row" style="align-items: flex-end; margin-top: 15px;">
+                    <div class="form-group" style="flex: 0.8;">
+                        <label>Cantidad:</label>
+                        <input type="number" id="comp-cant" value="1" min="0.1" step="any" style="font-size:15px; font-weight:bold; text-align:center;">
+                    </div>
+                    <div class="form-group" style="flex: 3;">
+                        <label>Buscar Refacción en Inventario (o escribir servicio / mano de obra):</label>
+                        <input type="text" id="comp-buscar" placeholder="Escribe el código, pieza o servicio (Ej. FILTRO DE AIRE, CAMBIO DE ACEITE...)" autocomplete="off" oninput="filtrarSugerenciasComp(this.value)" style="font-size:14px;">
+                        <input type="hidden" id="comp-producto">
+                        <div id="comp-sugerencias" class="sugerencias-box"></div>
+                    </div>
+                    <div class="form-group" style="flex: 1.2;">
+                        <label>Precio / Costo Unit. ($):</label>
+                        <input type="number" id="comp-precio-manual" step="0.01" placeholder="0.00" style="font-size:14px; text-align:right;">
+                    </div>
+                    <div class="form-group" style="flex: 0.8;">
+                        <button type="button" class="btn-secundario" style="background-color: var(--prod); width: 100%; height: 39px; margin-top:0; font-size: 14px;" onclick="agregarComponenteServicio()">+ Agregar Partida</button>
+                    </div>
+                </div>
+
+                <div class="tabla-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 80px; text-align: center;">Cantidad</th>
+                                <th>Código / Tipo</th>
+                                <th>Descripción (Refacción / Servicio)</th>
+                                <th>Categoría</th>
+                                <th style="text-align: right;">Costo Unit.</th>
+                                <th style="text-align: right;">Subtotal</th>
+                                <th style="text-align: center; width: 70px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo-produccion">
+                            <tr><td colspan="7" align="center" style="padding: 20px; color:#95a5a6;">Agregue las refacciones o servicios que se instalaron en el vehículo...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="resumen-caja" style="margin-top: 20px; border-color: var(--prod); background-color: #fef9e7;">
+                    <h3 style="color:var(--prod); margin: 0;">TOTAL DE REFACCIONES Y SERVICIO: $<span id="lbl-costo-produccion">0.00</span></h3>
+                </div>
+
+                <button class="btn-principal btn-produccion" onclick="registrarOrdenServicioLocal()" id="btn-procesar-prod" style="font-size: 16px; padding: 14px; margin-top: 20px; box-shadow: 0 4px 8px rgba(230,126,34,0.3);">🛠️ Registrar Orden en el Historial del Vehículo</button>
+            </div>
+        </div>
+
+<!-- 3. INVENTARIO -->
+<div id="seccion-inventario" class="seccion">
+            <h2>Control de Inventario</h2>
+            <div style="background-color: #fcfcfc; padding: 15px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 20px;">
+                <form id="form-prod" onsubmit="guardarProductoLocal(event)">
+                    <div class="form-row"><div class="form-group"><label>Línea:</label><input type="text" id="prod-linea" required></div><div class="form-group"><label>Código:</label><input type="text" id="prod-codigo" required></div><div class="form-group" style="flex: 2;"><label>Descripción:</label><input type="text" id="prod-desc" required></div><div class="form-group"><label>Categoría:</label><select id="prod-cat" required><option value="Servicio">Servicio</option><option value="Mano de Obra">Mano de Obra</option><option value="Refaccion">Refaccion</option></select></div></div>
+                    <div class="form-row"><div class="form-group"><label>Costo:</label><input type="number" id="prod-costo" step="0.01" required></div><div class="form-group"><label>Precio:</label><input type="number" id="prod-precio" step="0.01" required></div><div class="form-group"><label>Stock:</label><input type="number" id="prod-stock" required value="1" step="any"></div></div>
+                    <button type="submit" class="btn-principal">Guardar Producto</button>
+                </form>
+            </div>
+            <div class="panel-filtros"><div class="form-row"><div class="form-group"><label>Buscar:</label><input type="text" id="filtro-texto" oninput="filtrarInventario()"></div><div class="form-group"><label>Línea:</label><select id="filtro-linea" onchange="filtrarInventario()"></select></div><div class="form-group"><label>Categoría:</label><select id="filtro-categoria" onchange="filtrarInventario()"></select></div></div></div>
+            <div class="tabla-container"><table><thead>
+              <thead>
+  <tr>
+    <th onclick="ordenarTablaInventario(event, 0, 'texto')" style="cursor: pointer;">Línea ↕️</th>
+    <th onclick="ordenarTablaInventario(event, 1, 'texto')" style="cursor: pointer;">Código ↕️</th>
+    <th onclick="ordenarTablaInventario(event, 2, 'texto')" style="cursor: pointer;">Descripción ↕️</th>
+    <th onclick="ordenarTablaInventario(event, 3, 'texto')" style="cursor: pointer;">Categoría ↕️</th>
+    <th onclick="ordenarTablaInventario(event, 4, 'numero')" style="cursor: pointer;">Costo ↕️</th>
+    <th onclick="ordenarTablaInventario(event, 5, 'numero')" style="cursor: pointer;">Precio Venta ↕️</th>
+    <th onclick="ordenarTablaInventario(event, 6, 'numero')" style="cursor: pointer;">Existencias ↕️</th>
+    <th>Acciones</th>
+  </tr>
+</thead>
+<tbody id="tabla-cuerpo-inventario"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 4. CLIENTES -->
+        <div id="seccion-clientes" class="seccion">
+        <h2>Directorio de Clientes</h2>
+        
+        <!-- Formulario de captura -->
+        <div style="background-color: #fcfcfc; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div class="form-row">
+                <div class="form-group"><label>Nombre:</label><input type="text" id="c-nombre"></div>
+                <div class="form-group"><label>RFC:</label><input type="text" id="c-rfc"></div>
+                <div class="form-group"><label>Tel:</label><input type="text" id="c-tel"></div>
+                <div class="form-group"><label>Dir:</label><input type="text" id="c-dir"></div>
+            </div>
+            <button class="btn-success" onclick="guardarCliente()" style="width: 100%; margin-top: 15px;">Guardar Cliente</button>
+        </div>
+
+        <!-- Tabla de directorio -->
+        <div style="background-color: #fcfcfc; padding: 15px; border-radius: 8px;">
+            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                <input type="text" id="buscar-cliente" oninput="filtrarClientes()" placeholder="🔎 Buscar cliente por nombre, RFC o teléfono..." style="flex: 1; padding: 12px; font-size: 15px; border-radius: 6px; border: 1px solid #ccc; box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);">
+                <button class="btn-primary" onclick="abrirModalUnificarClientes()" style="padding: 0 20px;">🔗 Unificar Duplicados</button>
+            </div>
+            <div class="tabla-container">
+                <table id="tabla-clientes">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>RFC</th>
+                            <th>Teléfono</th>
+                            <th>Dirección</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-cuerpo-clientes"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+        <!-- 4.5 VEHÍCULOS AUTOTEC -->
+        <div id="seccion-vehiculos" class="seccion">
+            <h2>🚘 Control y Expediente de Vehículos (AUTOTEC)</h2>
+            <p style="color:#555; margin-bottom:15px;">Registro técnico de automóviles por cliente, historial de mantenimiento y control de garantías.</p>
+            
+            <div style="background-color: #fcfcfc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <h3 style="color:#2980b9; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 15px;">📋 Ficha de Ingreso Vehicular y Diagnóstico</h3>
+                <form id="form-vehiculo" onsubmit="guardarVehiculoLocal(event)">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2.2;">
+                            <label style="font-size: 13px;">Dueño (Cliente Registrado):</label>
+                            <select id="v-auto-dueno" required style="font-size: 14px; padding: 9px;"><option value="">Seleccione al cliente propietario...</option></select>
+                        </div>
+                        <div class="form-group" style="flex: 1.8;">
+                            <label style="font-size: 13px;">VIN / Número de Serie:</label>
+                            <input type="text" id="v-auto-vin" placeholder="Ej: 2CNBE13C826938470" required style="font-family: monospace; font-weight: bold; font-size: 14px; padding: 9px;">
+                        </div>
+                        <div class="form-group" style="flex: 1.2;">
+                            <label style="font-size: 13px; color: #27ae60;">Fecha Registro / Modificación:</label>
+                            <input type="date" id="v-auto-fecha" required class="form-control" style="font-size: 14px; padding: 9px; font-weight: bold;">
+                        </div>
+                        <div class="form-group" style="flex: 1.3;">
+                            <label style="font-size: 13px;">Placas:</label>
+                            <input type="text" id="v-auto-placas" placeholder="Ej: VXP 385 A" style="font-size: 14px; padding: 9px;">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top: 12px;">
+                        <div class="form-group" style="flex: 1.3;">
+                            <label style="font-size: 13px;">Marca:</label>
+                            <input type="text" id="v-auto-marca" placeholder="Ej: CHEVROLET, FORD" style="font-size: 14px; padding: 9px;">
+                        </div>
+                        <div class="form-group" style="flex: 1.3;">
+                            <label style="font-size: 13px;">Modelo:</label>
+                            <input type="text" id="v-auto-modelo" placeholder="Ej: Tracker, Silverado" style="font-size: 14px; padding: 9px;">
+                        </div>
+                        <div class="form-group" style="flex: 0.8;">
+                            <label style="font-size: 13px;">Año:</label>
+                            <input type="number" id="v-auto-ano" placeholder="Ej: 2002" min="1900" max="2100" style="font-size: 14px; padding: 9px; text-align: center;">
+                        </div>
+                        <div class="form-group" style="flex: 1.8;">
+                            <label style="font-size: 13px;">Motor (Engine Size / Especificaciones):</label>
+                            <input type="text" id="v-auto-motor" placeholder="Ej: L34 2.0L 4 DOHC" style="font-size: 14px; padding: 9px;">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top: 12px; margin-bottom: 5px;">
+                        <div class="form-group" style="width: 100%;">
+                            <label style="font-size: 13px; color: #c0392b;">Color del Vehículo:</label>
+                            <input type="text" id="v-auto-obs" placeholder="Ej: Blanco, Rojo, Plata..." style="font-size: 14px; padding: 9px;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-success" style="width: 100%; margin-top: 18px; font-weight: bold; font-size: 16px; padding: 12px; background-color: #2980b9; box-shadow: 0 3px 6px rgba(41,128,185,0.3);">🚘 Guardar / Actualizar Vehículo y Fecha en Expediente</button>
+                </form>
+            </div>
+            <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <input type="text" id="buscar-vehiculo" placeholder="🔍 Buscar auto por Orden, Cliente, VIN, Placas, Modelo, Color..." oninput="filtrarVehiculos()" style="flex-grow: 1; padding: 12px 15px; font-size: 15px; border-radius: 6px; border: 1px solid #ccc; box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);">
+                <select id="filtro-anio-vehiculo" onchange="filtrarVehiculos()" style="padding: 12px; font-size: 15px; border-radius: 6px; border: 1px solid #ccc; min-width: 150px; background-color: #fff; cursor: pointer;">
+                    <option value="">Todos los años</option>
+                    <option value="2026">2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <option value="2020">2020</option>
+                    <option value="2019">2019</option>
+                    <option value="2018">2018</option>
+                    <option value="2017">2017</option>
+                    <option value="2016">2016</option>
+                </select>
+            </div>
+            
+            <div class="tabla-container" style="box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <table id="tabla-vehiculos">
+                    <thead>
+                        <tr>
+                            <th>Dueño / Cliente</th>
+                            <th>VIN (N° Serie)</th>
+                            <th>Marca y Modelo</th>
+                            <th style="text-align: center;">Año</th>
+                            <th>Motor</th>
+                            <th style="text-align: center;">Placas</th>
+                            <th>Fecha Mod.</th>
+                            <th style="text-align: center;">Órdenes</th>
+                            <th style="text-align: center;">Acciones & Historial</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-cuerpo-vehiculos"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. PROVEEDORES -->
+        <div id="seccion-proveedores" class="seccion">
+            <h2>Directorio de Proveedores</h2>
+            <div style="background-color: #fcfcfc; padding: 15px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 20px;"><form id="form-prov" onsubmit="guardarProveedorLocal(event)"><div class="form-row"><div class="form-group"><label>Nombre:</label><input type="text" id="prov-nombre" required></div><div class="form-group"><label>RFC:</label><input type="text" id="prov-rfc"></div><div class="form-group"><label>Tel:</label><input type="text" id="prov-tel"></div><div class="form-group"><label>Dir:</label><input type="text" id="prov-dir"></div></div><button type="submit" class="btn-principal">Guardar Proveedor</button></form></div>
+            <div class="tabla-container"><table><thead><tr><th>Nombre</th><th>RFC</th><th>Teléfono</th><th>Dirección</th><th>Acción</th></tr></thead><tbody id="tabla-cuerpo-proveedores"></tbody></table></div>
+        </div>
+
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- LÓGICA RESTAURADA CON MODALES Y RESTRICCIONES -->
+    <!-- ============================================== -->
+   
+<!-- ... Aquí termina todo el contenido de tu punto de venta, tablas y botones ... -->
+
+    <!-- PEGA EL PASO 2 AQUÍ ABAJO: -->
+    <div id="version-app" class="version-badge" style="display:none;">Versión Web (Solo Lectura)</div>
+
+    <style>
+        /* MODO WEB SOLO LECTURA (Oculta botones y formularios de escritura) */
+        form, .form-row, .btn-principal, .btn-secundario, .btn-success, .btn-danger, #btn-login, #btn-procesar, #btn-procesar-prod {
+            display: none !important;
+        }
+        .seccion h2::after {
+            content: " (Modo Solo Lectura)";
+            font-size: 0.6em;
+            color: #e74c3c;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+    </style>
+    
+<script src="app.js"></script>
+</body> <!-- Esta es la etiqueta donde cierra la página -->
+</html>
